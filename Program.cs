@@ -87,7 +87,7 @@ async Task RunCustomerConsole(BankContext db, CustomerService customerService)
         Console.Write("Seçiminizi edin: ");
 
         var s = Console.ReadLine();
-        if (s == "5") return;
+        if (s == "5") return; Console.ForegroundColor = ConsoleColor.Green;
 
         switch (s)
         {
@@ -238,7 +238,7 @@ async Task RunAccountConsole(BankContext db, AccountService accountService, Exch
         Console.WriteLine("2. Mədaxil (Balans artır)");
         Console.WriteLine("3. Məxaric (Balansdan çıxar)");
         Console.WriteLine("4. Hesabın əməliyyatlarına bax");
-        Console.WriteLine("9. Əsas menyuya qayıt");
+        Console.WriteLine("5. Əsas menyuya qayıt");
         Console.Write("Seçiminizi edin: ");
 
         var s = Console.ReadLine();
