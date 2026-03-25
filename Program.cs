@@ -2,22 +2,23 @@
 using BankAccountSystem.Models;
 using BankAccountSystem.Services;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 
 try
 {
-await RunMenu(); 
+    await RunMenu();
 }
 catch (Exception ex)
 {
-Console.WriteLine($"🛑 Kritik Xəta: {ex.Message}");
-if (ex.InnerException != null)
-Console.WriteLine($"Daxili Xəta: {ex.InnerException.Message}");
+    Console.WriteLine($"🛑 Kritik Xəta: {ex.Message}");
+    if (ex.InnerException != null)
+        Console.WriteLine($"Daxili Xəta: {ex.InnerException.Message}");
 
-Console.WriteLine("\nProqram dayandı. Davam etmək üçün düymə sıxın...");
-Console.ReadKey();
+    Console.WriteLine("\nProqram dayandı. Davam etmək üçün düymə sıxın...");
+    Console.ReadKey();
 }
 
 async Task RunMenu()
@@ -65,10 +66,29 @@ async Task RunMenu()
                 Console.Write("Email ünvanı: ");
                 string email = Console.ReadLine()!;
 
-                await customerService.AddCustomerAsync(new Customer { FullName = ad, NationalId = fin, Email = email });
+                Console.Write("Telefon nömrəsi: ");
+                string phone = Console.ReadLine()!;
+
+                DateTime dob;
+                while (true)
+                {
+                    Console.Write("Doğum tarixi (YYYY-MM-DD): ");
+                    string dobInput = Console.ReadLine()!;
+                    if (DateTime.TryParseExact(dobInput, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out dob))
+                        break;
+                    if (DateTime.TryParse(dobInput, out dob))
+                        break;
+                    Console.WriteLine("Tarix formatı düzgün deyil. Yenidən cəhd edin.");
+                }
+
+                var newCustomer = new Customer { FullName = ad, NationalId = fin, Email = email, Phone = phone, DateOfBirth = dob };
+                await customerService.AddCustomerAsync(newCustomer);
 
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("\n✅ Müştəri uğurla bazaya əlavə edildi!");
+                Console.WriteLine($"ID: {newCustomer.Id} | Ad: {newCustomer.FullName} | FİN: {newCustomer.NationalId} | Telefon: {newCustomer.Phone} | Doğum: {newCustomer.DateOfBirth:yyyy-MM-dd}");
+                Console.WriteLine("Davams etmək üçün düyməyə basın...");
+                Console.ReadKey();
                 break;
 
             case "2":
@@ -78,8 +98,10 @@ async Task RunMenu()
                 var musteriler = await customerService.GetAllCustomersAsync();
                 foreach (var m in musteriler)
                 {
-                    Console.WriteLine($"🆔 ID: {m.Id} | 👤 Ad: {m.FullName} | 🔑 FİN: {m.NationalId}");
+                    Console.WriteLine($"🆔 ID: {m.Id} | 👤 Ad: {m.FullName} | 🔑 FİN: {m.NationalId} | 📞 Telefon: {m.Phone} | 🎂 Doğum tarixi: {m.DateOfBirth:yyyy-MM-dd}");
                 }
+                Console.WriteLine("\nDavams etmək üçün düyməyə basın...");
+                Console.ReadKey();
                 break;
 
             case "3":
@@ -89,9 +111,12 @@ async Task RunMenu()
                 Console.Write("Valyuta seçin (AZN, USD, EUR): ");
                 string valyuta = Console.ReadLine()!.ToUpper();
 
-                await accountService.CreateAccountAsync(mId, valyuta);
+                var createdAccount = await accountService.CreateAccountAsync(mId, valyuta);
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine($"\n✅ {valyuta} hesabı uğurla açıldı!");
+                Console.WriteLine($"Hesab ID: {createdAccount.Id} | Nº: {createdAccount.AccountNumber} | Valyuta: {createdAccount.Currency} | Balans: {createdAccount.Balance}");
+                Console.WriteLine("Davams etmək üçün düyməyə basın...");
+                Console.ReadKey();
                 break;
 
             case "4":
@@ -100,9 +125,12 @@ async Task RunMenu()
                 Console.Write("Mədaxil ediləcək məbləğ: ");
                 decimal mebleq = decimal.Parse(Console.ReadLine()!);
 
-                await accountService.DepositAsync(hId, mebleq);
+                var updatedAccountDeposit = await accountService.DepositAsync(hId, mebleq);
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("\n✅ Balans artırıldı!");
+                Console.WriteLine($"Hesab ID: {updatedAccountDeposit.Id} | Yeni balans: {updatedAccountDeposit.Balance}");
+                Console.WriteLine("Davams etmək üçün düyməyə basın...");
+                Console.ReadKey();
                 break;
 
             case "5":
@@ -111,9 +139,12 @@ async Task RunMenu()
                 Console.Write("Çıxarılacaq məbləğ: ");
                 decimal mexMebleq = decimal.Parse(Console.ReadLine()!);
 
-                await accountService.WithdrawAsync(mexId, mexMebleq);
+                var updatedAccountWithdraw = await accountService.WithdrawAsync(mexId, mexMebleq);
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("\n✅ Məbləğ uğurla çıxarıldı!");
+                Console.WriteLine($"Hesab ID: {updatedAccountWithdraw.Id} | Yeni balans: {updatedAccountWithdraw.Balance}");
+                Console.WriteLine("Davams etmək üçün düyməyə basın...");
+                Console.ReadKey();
                 break;
 
             case "0":
@@ -122,7 +153,9 @@ async Task RunMenu()
             default:
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("\n❌ Yanlış seçim!");
+                Console.WriteLine("Davams etmək üçün düyməyə basın...");
+                Console.ReadKey();
                 break;
-            }
         }
     }
+}

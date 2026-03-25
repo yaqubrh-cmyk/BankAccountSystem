@@ -13,8 +13,7 @@ public class AccountService
         _context = context;
     }
 
-    
-    public async Task CreateAccountAsync(int customerId, string currency)
+    public async Task<Account> CreateAccountAsync(int customerId, string currency)
     {
         var account = new Account
         {
@@ -27,10 +26,10 @@ public class AccountService
 
         _context.Accounts.Add(account);
         await _context.SaveChangesAsync();
+        return account;
     }
 
-    
-    public async Task DepositAsync(int accountId, decimal amount)
+    public async Task<Account> DepositAsync(int accountId, decimal amount)
     {
         var account = await _context.Accounts.FindAsync(accountId);
         if (account == null) throw new Exception("Hesab tapılmadı!");
@@ -42,15 +41,16 @@ public class AccountService
             AccountId = accountId,
             Amount = amount,
             TransactionType = "Deposit",
+            Type = "Deposit",
             OccurredAt = DateTime.Now,
             BalanceAfter = account.Balance
         });
 
         await _context.SaveChangesAsync();
+        return account;
     }
 
-   
-    public async Task WithdrawAsync(int accountId, decimal amount)
+    public async Task<Account> WithdrawAsync(int accountId, decimal amount)
     {
         var account = await _context.Accounts.FindAsync(accountId);
 
@@ -65,12 +65,14 @@ public class AccountService
         _context.Transactions.Add(new Transaction
         {
             AccountId = accountId,
-            Amount = -amount, 
+            Amount = -amount,
             TransactionType = "Withdraw",
+            Type = "Withdraw",
             OccurredAt = DateTime.Now,
             BalanceAfter = account.Balance
         });
 
         await _context.SaveChangesAsync();
+        return account;
     }
 }
