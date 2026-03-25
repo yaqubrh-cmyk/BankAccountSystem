@@ -23,13 +23,33 @@ public class CustomerService
         // Return only non-deleted customers
         return await _context.Customers.Where(c => !c.IsDeleted).ToListAsync();
     }
+
     public async Task DeleteCustomerAsync(int id)
     {
-        var customer = await _context.Customers.FindAsync(id);
-        if (customer != null)
+        var customer = await _context.Customers
+            .Include(c => c.Accounts)
+                .ThenInclude(a => a.Transactions)
+            .FirstOrDefaultAsync(c => c.Id == id);
+
+        if (customer == null)
+            return;
+
+        // Remove transactions and accounts belonging to customer
+        if (customer.Accounts != null && customer.Accounts.Any())
         {
-            customer.IsDeleted = true; // Soft-delete
-            await _context.SaveChangesAsync();
+            foreach (var acc in customer.Accounts.ToList())
+            {
+                if (acc.Transactions != null && acc.Transactions.Any())
+                {
+                    _context.Transactions.RemoveRange(acc.Transactions);
+                }
+                _context.Accounts.Remove(acc);
+            }
         }
+
+        // Mark customer as deleted (soft delete) to keep record, but accounts removed
+        customer.IsDeleted = true;
+
+        await _context.SaveChangesAsync();
     }
 }

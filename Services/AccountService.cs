@@ -15,6 +15,11 @@ public class AccountService
 
     public async Task<Account> CreateAccountAsync(int customerId, string currency)
     {
+        // Ensure customer exists and is not deleted
+        var customer = await _context.Customers.FindAsync(customerId);
+        if (customer == null || customer.IsDeleted)
+            throw new Exception("Müştəri tapılmadı və ya silinib. Hesab açıla bilməz.");
+
         var account = new Account
         {
             CustomerId = customerId,
@@ -33,6 +38,15 @@ public class AccountService
     {
         var account = await _context.Accounts.FindAsync(accountId);
         if (account == null) throw new Exception("Hesab tapılmadı!");
+
+        // Check account status
+        if (account.Status != AccountStatus.Active)
+            throw new Exception("Bu hesab aktiv deyil. Əməliyyat icra edilə bilməz.");
+
+        // Check customer
+        var customer = await _context.Customers.FindAsync(account.CustomerId);
+        if (customer == null || customer.IsDeleted)
+            throw new Exception("Hesabın sahibi tapılmadı və ya silinib. Əməliyyat icra edilə bilməz.");
 
         account.Balance += amount;
 
@@ -57,6 +71,15 @@ public class AccountService
         if (account == null)
             throw new Exception("Hesab tapılmadı!");
 
+        // Check account status
+        if (account.Status != AccountStatus.Active)
+            throw new Exception("Bu hesab aktiv deyil. Əməliyyat icra edilə bilməz.");
+
+        // Check customer
+        var customer = await _context.Customers.FindAsync(account.CustomerId);
+        if (customer == null || customer.IsDeleted)
+            throw new Exception("Hesabın sahibi tapılmadı və ya silinib. Əməliyyat icra edilə bilməz.");
+
         if (account.Balance < amount)
             throw new Exception("Balansda kifayət qədər vəsait yoxdur!");
 
@@ -74,5 +97,6 @@ public class AccountService
 
         await _context.SaveChangesAsync();
         return account;
+
     }
 }
