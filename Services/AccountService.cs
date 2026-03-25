@@ -1,0 +1,76 @@
+﻿using BankAccountSystem.Data.Context;
+using BankAccountSystem.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace BankAccountSystem.Services;
+
+public class AccountService
+{
+    private readonly BankContext _context;
+
+    public AccountService(BankContext context)
+    {
+        _context = context;
+    }
+
+    
+    public async Task CreateAccountAsync(int customerId, string currency)
+    {
+        var account = new Account
+        {
+            CustomerId = customerId,
+            AccountNumber = "BA-" + Guid.NewGuid().ToString().Substring(0, 8).ToUpper(),
+            Balance = 0,
+            Currency = currency.ToUpper(),
+            CreatedAt = DateTime.Now
+        };
+
+        _context.Accounts.Add(account);
+        await _context.SaveChangesAsync();
+    }
+
+    
+    public async Task DepositAsync(int accountId, decimal amount)
+    {
+        var account = await _context.Accounts.FindAsync(accountId);
+        if (account == null) throw new Exception("Hesab tapılmadı!");
+
+        account.Balance += amount;
+
+        _context.Transactions.Add(new Transaction
+        {
+            AccountId = accountId,
+            Amount = amount,
+            TransactionType = "Deposit",
+            OccurredAt = DateTime.Now,
+            BalanceAfter = account.Balance
+        });
+
+        await _context.SaveChangesAsync();
+    }
+
+   
+    public async Task WithdrawAsync(int accountId, decimal amount)
+    {
+        var account = await _context.Accounts.FindAsync(accountId);
+
+        if (account == null)
+            throw new Exception("Hesab tapılmadı!");
+
+        if (account.Balance < amount)
+            throw new Exception("Balansda kifayət qədər vəsait yoxdur!");
+
+        account.Balance -= amount;
+
+        _context.Transactions.Add(new Transaction
+        {
+            AccountId = accountId,
+            Amount = -amount, 
+            TransactionType = "Withdraw",
+            OccurredAt = DateTime.Now,
+            BalanceAfter = account.Balance
+        });
+
+        await _context.SaveChangesAsync();
+    }
+}
